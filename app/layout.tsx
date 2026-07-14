@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import { ThemeProvider } from "@/components/provider/theme-provider";
 import { QueryProvider } from "@/components/provider/query-provider";
+import { ClerkProvider } from "@clerk/nextjs"
 
 const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -34,16 +35,18 @@ export default function RootLayout({
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", spaceGrotesk.variable)}
     >
       <body className="min-h-full flex flex-col">
-        <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            {children}
-          </ThemeProvider>
-        </QueryProvider>
+        <ClerkProvider>
+          <QueryProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              {children}
+            </ThemeProvider>
+          </QueryProvider>
+        </ClerkProvider>
       </body>
     </html >
   );
