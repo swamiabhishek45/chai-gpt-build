@@ -12,7 +12,7 @@ export async function onBoard() {
     if(!clerkUser){
         throw new Error("Unauthorized")
     }
-3
+
     const email = clerkUser.emailAddresses[0]?.emailAddress ?? null;
 
     // if data is alreday exist, update data

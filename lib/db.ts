@@ -1,4 +1,4 @@
-import {PrismaPg} from "@prisma/adapter-pg"
+import {PrismaPg} from "@prisma/adapter-pg" // auth adapater
 
 import { PrismaClient } from "./generated/prisma/client"
 
