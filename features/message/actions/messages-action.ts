@@ -1,6 +1,6 @@
 "use server";
 
-import { requireUser } from "@/features/auth/action/require-user";
+import { requireUser } from "@/features/auth/actions/require-user";
 import { prisma } from "@/lib/db";
 import { MessageRole, MessageStatus } from "@/lib/generated/prisma/enums";
 import { revalidatePath } from "next/cache";
