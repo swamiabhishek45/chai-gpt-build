@@ -251,7 +251,7 @@ function ChatItem({
         )}
       >
         <span className="truncate pr-6 text-xs">{conversation.title}</span>
-        
+
         {/* Discord-style left accent indicator line */}
         <div
           className={cn(

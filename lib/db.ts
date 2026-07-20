@@ -1,25 +1,36 @@
-import {PrismaPg} from "@prisma/adapter-pg" // auth adapater
-
-import { PrismaClient } from "./generated/prisma/client"
-
+import { Pool } from 'pg';
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "./generated/prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
     prisma: PrismaClient | undefined;
+    pgPool: Pool | undefined;
 };
 
-function createPrismaClient(){
+function createPrismaClient() {
     const url = process.env.DATABASE_URL;
-    if(!url){
-        throw new Error('DATABASE_URL is not set')
+    if (!url) {
+        throw new Error('DATABASE_URL is not set');
     }
 
-const adapter = new PrismaPg({connectionString: url})
-return new PrismaClient({adapter})
+    const pool = new Pool({
+        connectionString: url,
+        max: 10, // pool up to 10 connections
+        idleTimeoutMillis: 30000, // close idle clients after 30 seconds
+        connectionTimeoutMillis: 2000, // wait up to 2 seconds for a connection
+    });
 
+    const adapter = new PrismaPg(pool);
+
+    if (process.env.NODE_ENV !== "production") {
+        globalForPrisma.pgPool = pool;
+    }
+
+    return new PrismaClient({ adapter });
 }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if(process.env.NODE_ENV !== "production"){
+if (process.env.NODE_ENV !== "production") {
     globalForPrisma.prisma = prisma;
 }

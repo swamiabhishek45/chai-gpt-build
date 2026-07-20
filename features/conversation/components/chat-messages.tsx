@@ -15,13 +15,13 @@ import {
 import {
   Message,
   MessageContent,
-  MessageResponse,
   MessageActions,
   MessageAction,
 } from "@/components/ai-elements/message";
 import { Loader } from "@/components/ai-elements/loader";
 import { SearchSources } from "./search-sources";
 import { useCreateBranch } from "../hooks/use-branches";
+import { MessageResponse } from "@/components/ai-elements/message-response";
 
 /** Extracts plain text from a `UIMessage` by joining all text parts. */
 function getMessageText(message: UIMessage) {
@@ -96,59 +96,59 @@ export function ChatMessages({ messages, status, conversationId }: ChatMessagesP
                   hasToolCalls ? "w-full" : "",
                   isGenerating && "after:content-['▋'] after:inline-block after:text-primary after:ml-0.5 after:animate-pulse"
                 )}>
-                {/* 1. Render Search Tool execution state and results if any */}
-                {hasToolCalls && (
-                  <div className="flex flex-col gap-2 mb-3">
-                    {webSearchParts.map((part: any, partIdx) => {
-                      const query = part.input?.query || "";
-                      const isCompleted = part.state === "output-available";
-                      const isError = part.state === "output-error";
-                      const resultData = isError 
-                        ? { error: true, message: part.errorText || "Search execution failed" }
-                        : part.output;
+                  {/* 1. Render Search Tool execution state and results if any */}
+                  {hasToolCalls && (
+                    <div className="flex flex-col gap-2 mb-3">
+                      {webSearchParts.map((part: any, partIdx) => {
+                        const query = part.input?.query || "";
+                        const isCompleted = part.state === "output-available";
+                        const isError = part.state === "output-error";
+                        const resultData = isError
+                          ? { error: true, message: part.errorText || "Search execution failed" }
+                          : part.output;
 
-                      return (
-                        <SearchSources
-                          key={part.toolCallId || partIdx}
-                          query={query}
-                          isCompleted={isCompleted}
-                          result={resultData}
-                        />
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* 2. Render Text response if any */}
-                {hasTextContent ? (
-                  <MessageResponse>{textContent}</MessageResponse>
-                ) : (
-                  // Show status indicator if tool search is in progress
-                  hasToolCalls && !webSearchParts.every((part: any) => part.state === "output-available" || part.state === "output-error") && (
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse mt-1">
-                      <span>Searching the web...</span>
+                        return (
+                          <SearchSources
+                            key={part.toolCallId || partIdx}
+                            query={query}
+                            isCompleted={isCompleted}
+                            result={resultData}
+                          />
+                        );
+                      })}
                     </div>
-                  )
-                )}
-              </MessageContent>
+                  )}
 
-              {/* Message Fork Action Button */}
-              <MessageActions className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex gap-1 justify-start">
-                <MessageAction
-                  onClick={() => {
-                    setForkingMessageId(message.id);
-                    setForkName(`Branch from ${message.role === "user" ? "User" : "AI"}`);
-                  }}
-                  tooltip="Fork a new branch from this message"
-                  aria-label="Fork Branch"
-                  className="h-6 px-2 text-[10px] flex items-center gap-1 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 rounded-md bg-background/50 cursor-pointer"
-                >
-                  <GitBranch size={10} className="text-primary" />
-                  <span>Fork</span>
-                </MessageAction>
-              </MessageActions>
-            </Message>
-          </motion.div>
+                  {/* 2. Render Text response if any */}
+                  {hasTextContent ? (
+                    <MessageResponse>{textContent}</MessageResponse>
+                  ) : (
+                    // Show status indicator if tool search is in progress
+                    hasToolCalls && !webSearchParts.every((part: any) => part.state === "output-available" || part.state === "output-error") && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground animate-pulse mt-1">
+                        <span>Searching the web...</span>
+                      </div>
+                    )
+                  )}
+                </MessageContent>
+
+                {/* Message Fork Action Button */}
+                <MessageActions className="opacity-0 group-hover:opacity-100 transition-opacity mt-1 flex gap-1 justify-start">
+                  <MessageAction
+                    onClick={() => {
+                      setForkingMessageId(message.id);
+                      setForkName(`Branch from ${message.role === "user" ? "User" : "AI"}`);
+                    }}
+                    tooltip="Fork a new branch from this message"
+                    aria-label="Fork Branch"
+                    className="h-6 px-2 text-[10px] flex items-center gap-1 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 rounded-md bg-background/50 cursor-pointer"
+                  >
+                    <GitBranch size={10} className="text-primary" />
+                    <span>Fork</span>
+                  </MessageAction>
+                </MessageActions>
+              </Message>
+            </motion.div>
           );
         })}
 

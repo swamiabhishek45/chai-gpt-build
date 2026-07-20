@@ -5,6 +5,8 @@ import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/db";
 
 
+import { appCache } from "@/lib/cache";
+
 export async function onBoard() {
 
     const clerkUser = await currentUser();
@@ -14,6 +16,8 @@ export async function onBoard() {
     }
 
     const email = clerkUser.emailAddresses[0]?.emailAddress ?? null;
+
+    appCache.delete(`user:${clerkUser.id}`);
 
     // if data is alreday exist, update data
     // if data is not present, create new data

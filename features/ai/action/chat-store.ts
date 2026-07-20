@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { isTextUIPart, type UIMessage } from "ai";
+import { appCache } from "@/lib/cache";
 
 
 type SaveChatMessagesOptions = {
@@ -101,12 +102,14 @@ export async function loadChatMessages(conversationId: string): Promise<UIMessag
     return [];
   }
 
-  const allMessages = await prisma.message.findMany({
+  // Load only the message tree structure to avoid overfetching heavy contents of inactive branches
+  const messageTree = await prisma.message.findMany({
     where: { conversationId },
+    select: { id: true, parentId: true }
   });
 
-  const messageMap = new Map(allMessages.map((m) => [m.id, m]));
-  const path: typeof allMessages = [];
+  const messageMap = new Map(messageTree.map((m) => [m.id, m]));
+  const pathIds: string[] = [];
   
   let currentId: string | null = branch.leafMessageId;
   const visited = new Set<string>();
@@ -115,11 +118,30 @@ export async function loadChatMessages(conversationId: string): Promise<UIMessag
     visited.add(currentId);
     const msg = messageMap.get(currentId);
     if (!msg) break;
-    path.unshift(msg);
+    pathIds.unshift(currentId);
     currentId = msg.parentId;
   }
 
-  return path.map((row) => ({
+  // Fetch full details only for the messages in the active path
+  const pathMessages = await prisma.message.findMany({
+    where: {
+      id: { in: pathIds }
+    },
+    select: {
+      id: true,
+      role: true,
+      content: true,
+      parts: true
+    }
+  });
+
+  // Re-sort to preserve the leaf-to-root trace order
+  const pathMessageMap = new Map(pathMessages.map((m) => [m.id, m]));
+  const sortedMessages = pathIds
+    .map((id) => pathMessageMap.get(id))
+    .filter((msg): msg is NonNullable<typeof msg> => !!msg);
+
+  return sortedMessages.map((row) => ({
     id: row.id,
     role:
       row.role === "ASSISTANT"
@@ -208,4 +230,7 @@ export async function saveChatMessages(
           : conversation.title,
     },
   });
+
+  appCache.delete(`conversation:${conversationId}`);
+  appCache.deleteByPattern("conversations:");
 }

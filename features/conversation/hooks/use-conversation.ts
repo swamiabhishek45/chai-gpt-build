@@ -46,13 +46,34 @@ export function useUpdateConversation() {
             isArchived?: boolean;
         }) => updateConversation(id, data),
 
-        onSuccess: (conversation) => {
+        onMutate: async ({ id, ...data }) => {
+            await queryClient.cancelQueries({ queryKey: queryKeys.conversation.all });
+
+            const previousConversations = queryClient.getQueryData(queryKeys.conversation.all);
+
+            queryClient.setQueryData(queryKeys.conversation.all, (old: any) => {
+                if (!old) return old;
+                // Map over list and apply changes immediately to memory
+                return old.map((conv: any) => {
+                    if (conv.id === id) {
+                        return { ...conv, ...data };
+                    }
+                    return conv;
+                });
+            });
+
+            return { previousConversations };
+        },
+        onError: (error: Error, variables, context) => {
+            if (context?.previousConversations) {
+                queryClient.setQueryData(queryKeys.conversation.all, context.previousConversations);
+            }
+            toast.error(error.message || "Failed to update chat");
+        },
+        onSettled: () => {
             void queryClient.invalidateQueries({
                 queryKey: queryKeys.conversation.all
-            })
-        },
-        onError: (error: Error) => {
-            toast.error(error.message || "Failed to update chat")
+            });
         }
     })
 }
@@ -63,20 +84,36 @@ export function useDeleteConversation(activeId?: string) {
 
     return useMutation({
         mutationFn: (id: string) => deleteConversation(id),
-        onSuccess: ({ id }) => {
-            void queryClient.invalidateQueries({
-                queryKey: queryKeys.conversation.all
+
+        onMutate: async (id) => {
+            await queryClient.cancelQueries({ queryKey: queryKeys.conversation.all });
+
+            const previousConversations = queryClient.getQueryData(queryKeys.conversation.all);
+
+            queryClient.setQueryData(queryKeys.conversation.all, (old: any) => {
+                if (!old) return old;
+                // Filter out the deleted chat instantly
+                return old.filter((conv: any) => conv.id !== id);
             });
+
+            return { previousConversations };
+        },
+        onError: (error: Error, variables, context) => {
+            if (context?.previousConversations) {
+                queryClient.setQueryData(queryKeys.conversation.all, context.previousConversations);
+            }
+            toast.error(error.message || "Failed to delete chat");
+        },
+        onSuccess: ({ id }) => {
             if (activeId === id) {
                 router.push("/")
             }
-
             toast.success("Chat deleted");
         },
-        onError: (error: Error) => {
-            toast.error(error.message || "Failed to deleted chat")
+        onSettled: () => {
+            void queryClient.invalidateQueries({
+                queryKey: queryKeys.conversation.all
+            });
         }
-
-
     })
 }

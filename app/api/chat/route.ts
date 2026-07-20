@@ -3,7 +3,7 @@ import { getChatModel } from "@/features/ai/utils/model";
 import { requireUser } from "@/features/auth/actions/require-user";
 import { prisma } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
-
+import { Logger } from "@/lib/logger";
 
 import { convertToModelMessages, createIdGenerator, createUIMessageStreamResponse, streamText, toUIMessageStream, tool, isStepCount, zodSchema, type UIMessage } from "ai"
 import { z } from "zod";
@@ -16,7 +16,6 @@ export async function POST(req: Request) {
     await auth.protect();
 
     // 3. Parse and validate input: id means conversationId
-
     const { message, id }: { message: UIMessage, id: string } = await req.json();
 
     if (!message || !id) {
@@ -24,7 +23,6 @@ export async function POST(req: Request) {
     }
 
     // 4. Get current user
-
     const user = await requireUser();
 
     if (!user) {
@@ -43,9 +41,12 @@ export async function POST(req: Request) {
         return new Response("Conversation not found", { status: 404 })
     }
 
-    // 6. Load previous messages
-
-    const previousMessages = await loadChatMessages(id)
+    // 6. Load previous messages (instrumented)
+    const previousMessages = await Logger.measure(
+        "Load Previous Messages",
+        () => loadChatMessages(id),
+        { conversationId: id, userId: user.id }
+    );
 
     // 7. Check and save new messages
     const alreadySaved = previousMessages.some((storedMessage) => storedMessage.id === message.id)
@@ -53,7 +54,11 @@ export async function POST(req: Request) {
     const messages = alreadySaved ? previousMessages : [...previousMessages, message]
 
     if (!alreadySaved) {
-        await saveChatMessages(id, [message]);
+        await Logger.measure(
+            "Save Incoming User Message",
+            () => saveChatMessages(id, [message]),
+            { conversationId: id, userId: user.id }
+        );
     }
 
     // 8. Prepare AI stream
@@ -70,10 +75,14 @@ export async function POST(req: Request) {
                 })),
                 execute: async ({ query }) => {
                     try {
-                        const results = await searchTavily(query);
+                        const results = await Logger.measure(
+                            `Search Tavily: ${query.slice(0, 30)}`,
+                            () => searchTavily(query),
+                            { query }
+                        );
                         return results;
                     } catch (error) {
-                        console.error("Tavily search failed:", error);
+                        Logger.error("Tavily search failed", error as Error, { query });
                         return {
                             error: true,
                             message: error instanceof Error ? error.message : "Unknown search error",
@@ -88,21 +97,23 @@ export async function POST(req: Request) {
     // 9. start streaming and bg save
     result.consumeStream();
 
-
     // 10. Run UI to client
-
     return createUIMessageStreamResponse({
         stream: toUIMessageStream({
             stream: result.stream,
             originalMessages: messages,
             generateMessageId: createIdGenerator({ prefix: "msg", size: 16 }),
 
-            // On stream end -> final save
+            // On stream end -> final save (instrumented in background)
             onEnd: async ({ messages: finalMessages }) => {
                 try {
-                    await saveChatMessages(id, finalMessages, { updateTitle: false })
+                    await Logger.measure(
+                        "Save Stream End Messages",
+                        () => saveChatMessages(id, finalMessages, { updateTitle: false }),
+                        { conversationId: id }
+                    );
                 } catch (error) {
-                    console.error("Failed to save chat messages", error)
+                    Logger.error("Failed to save chat messages on stream end", error as Error, { conversationId: id });
                 }
             }
         })
