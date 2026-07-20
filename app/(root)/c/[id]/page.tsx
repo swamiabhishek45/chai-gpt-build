@@ -12,8 +12,9 @@ const page = async({params}: ConversationPageProps) => {
 
     const {id} = await params;
 
+    let conversation;
     try {
-        await getConversation(id);
+        conversation = await getConversation(id);
     } catch (error) {
         notFound();
     }
@@ -21,7 +22,7 @@ const page = async({params}: ConversationPageProps) => {
     const initialMessages = await loadChatMessages(id);
   return (
     <ConversationView
-      key={id}
+      key={`${id}-${conversation.currentBranchId || 'default'}`}
       conversationId={id}
       initialMessages={initialMessages}
     />

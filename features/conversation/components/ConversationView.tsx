@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { ChatEmpty } from "./chat-empty";
 import { ChatMessages } from "./chat-messages";
 import { ChatComposer } from "./chat-composer";
+import { BranchSelector } from "./branch-selector";
 
 type ConversationViewProps = {
   conversationId: string;
@@ -54,20 +55,31 @@ const ConversationView = ({
       toast.error(error.message);
     },
   });
-  const title =
-    conversations?.find((item) => item.id === conversationId)?.title ?? "Chat";
+  const conversation = conversations?.find((item) => item.id === conversationId);
+  const title = conversation?.title ?? "Chat";
+  const currentBranchId = conversation?.currentBranchId ?? null;
+
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <header className="flex h-14 shrink-0 items-center gap-2 border-b px-3">
-        <SidebarTrigger />
-        <Separator orientation="vertical" className="mx-1 h-4" />
-        <h1 className="truncate text-sm font-medium">{title}</h1>
+      <header className="flex h-14 shrink-0 items-center justify-between border-b px-3">
+        <div className="flex items-center gap-2 min-w-0">
+          <SidebarTrigger />
+          <Separator orientation="vertical" className="mx-1 h-4" />
+          <h1 className="truncate text-sm font-medium max-w-[200px] sm:max-w-[400px]">{title}</h1>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <BranchSelector conversationId={conversationId} currentBranchId={currentBranchId} />
+        </div>
       </header>
 
       {messages.length === 0 ? (
-        <ChatEmpty />
+        <ChatEmpty
+          onSend={(text) => {
+            void sendMessage({ text });
+          }}
+        />
       ) : (
-        <ChatMessages messages={messages} status={status} />
+        <ChatMessages messages={messages} status={status} conversationId={conversationId} />
       )}
 
       <ChatComposer

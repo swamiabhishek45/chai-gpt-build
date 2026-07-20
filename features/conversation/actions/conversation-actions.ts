@@ -10,6 +10,7 @@ export type ConversationListItem = {
     isPinned: boolean
     isArchived: boolean
     lastMessageAt: Date
+    currentBranchId: string | null
     createdAt: Date
     updatedAt: Date
 };
@@ -52,6 +53,7 @@ export async function listConversations(): Promise<ConversationListItem[]> {
             lastMessageAt: true,
             createdAt: true,
             updatedAt: true,
+            currentBranchId: true,
         }
     })
 }

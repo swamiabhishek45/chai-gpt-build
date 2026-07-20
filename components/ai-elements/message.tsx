@@ -37,8 +37,8 @@ export type MessageProps = HTMLAttributes<HTMLDivElement> & {
 export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
-      "group flex w-full max-w-[95%] flex-col gap-2",
-      from === "user" ? "is-user ml-auto justify-end" : "is-assistant",
+      "group flex w-full flex-col gap-3 transition-all duration-300",
+      from === "user" ? "is-user ml-auto justify-end max-w-[75%]" : "is-assistant max-w-[95%] py-4",
       className
     )}
     {...props}
@@ -54,9 +54,9 @@ export const MessageContent = ({
 }: MessageContentProps) => (
   <div
     className={cn(
-      "is-user:dark flex w-fit min-w-0 max-w-full flex-col gap-2 overflow-hidden text-sm",
-      "group-[.is-user]:ml-auto group-[.is-user]:rounded-lg group-[.is-user]:bg-secondary group-[.is-user]:px-4 group-[.is-user]:py-3 group-[.is-user]:text-foreground",
-      "group-[.is-assistant]:text-foreground",
+      "flex w-fit min-w-0 max-w-full flex-col gap-2.5 overflow-hidden text-[15px] leading-relaxed",
+      "group-[.is-user]:ml-auto group-[.is-user]:rounded-2xl group-[.is-user]:bg-secondary/90 dark:group-[.is-user]:bg-secondary/35 group-[.is-user]:shadow-sm group-[.is-user]:border group-[.is-user]:border-border/20 group-[.is-user]:px-4.5 group-[.is-user]:py-3.5 group-[.is-user]:text-foreground",
+      "group-[.is-assistant]:text-foreground group-[.is-assistant]:bg-transparent group-[.is-assistant]:px-0 group-[.is-assistant]:py-0",
       className
     )}
     {...props}
