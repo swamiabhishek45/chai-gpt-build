@@ -5,40 +5,41 @@ import { Prisma } from "@/lib/generated/prisma/client";
 import { isTextUIPart, type UIMessage } from "ai";
 
 
+type SaveChatMessagesOptions = {
+  updateTitle?: boolean;
+};
+
 /** Extracts plain text from an AI SDK `UIMessage` by joining all text parts. */
 function getMessageText(message: UIMessage) {
   return message.parts.filter(isTextUIPart).map((part) => part.text).join("");
 }
 
 
-function toUIMessageParts(parts: Prisma.JsonValue | null, content: string): UIMessage["parts"]{
+function toUIMessageParts(parts: Prisma.JsonValue | null, content: string): UIMessage["parts"] {
 
-    const stored = parts as UIMessage["parts"] | null;
-    if(Array.isArray(stored) && stored.length > 0){
-        return stored;
-    }
+  const stored = parts as UIMessage["parts"] | null;
+  if (Array.isArray(stored) && stored.length > 0) {
+    return stored;
+  }
 
-    return [{type: "text", text: content}];
+  return [{ type: "text", text: content }];
 }
 
 
 export async function loadChatMessages(conversationId: string): Promise<UIMessage[]> {
-    const rows = await prisma.message.findMany({
-        where: { conversationId },
-        orderBy: { createdAt: "asc" }
-    })
 
-    return rows.map((row) => ({
-        id: row.id,
-            role: row.role === "ASSISTANT" ? "assistant" : "user",
-                parts: toUIMessageParts(row.parts, row.content),
-    }));
+  // it returns an array of stored messages from the database in ascending order
+  const rows = await prisma.message.findMany({
+    where: { conversationId },
+    orderBy: { createdAt: "asc" }
+  })
+
+  return rows.map((row) => ({
+    id: row.id,
+    role: row.role === "ASSISTANT" ? "assistant" : "user",
+    parts: toUIMessageParts(row.parts, row.content),
+  }));
 }
-
-type SaveChatMessagesOptions = {
-  updateTitle?: boolean;
-};
-
 
 export async function saveChatMessages(
   conversationId: string,

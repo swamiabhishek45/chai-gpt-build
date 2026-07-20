@@ -8,9 +8,11 @@ import { auth } from "@clerk/nextjs/server";
 import { convertToModelMessages, createIdGenerator, createUIMessageStreamResponse, streamText, toUIMessageStream, type UIMessage } from "ai"
 
 export async function POST(req: Request) {
+
+    // without login you are not allowed to access this api
     await auth.protect();
 
-    // id = conversationId
+    // id means conversationId
 
     const { message, id }: { message: UIMessage, id: string } = await req.json();
 

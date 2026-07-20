@@ -7,7 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { useQueryClient } from "@tanstack/react-query";
 import { useConversations } from "../hooks/use-conversation";
 
-import {useChat} from '@ai-sdk/react'
+import { useChat } from '@ai-sdk/react'
 import { queryKeys } from "../utils/query-keys";
 import { toast } from "sonner";
 import { ChatEmpty } from "./chat-empty";
