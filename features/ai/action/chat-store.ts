@@ -36,7 +36,12 @@ export async function loadChatMessages(conversationId: string): Promise<UIMessag
 
   return rows.map((row) => ({
     id: row.id,
-    role: row.role === "ASSISTANT" ? "assistant" : "user",
+    role:
+      row.role === "ASSISTANT"
+        ? "assistant"
+        : row.role === "SYSTEM"
+        ? "system"
+        : "user",
     parts: toUIMessageParts(row.parts, row.content),
   }));
 }

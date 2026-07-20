@@ -5,10 +5,10 @@ import { prisma } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 
 export type ConversationListItem = {
-    id: String
-    title: String
-    isPinned: Boolean
-    isArchived: Boolean
+    id: string
+    title: string
+    isPinned: boolean
+    isArchived: boolean
     lastMessageAt: Date
     createdAt: Date
     updatedAt: Date
