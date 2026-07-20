@@ -1,10 +1,11 @@
-import { loadChatMessages } from "@/features/ai/action/chat-store";
+import { loadChatMessages, saveChatMessages } from "@/features/ai/action/chat-store";
+import { getChatModel } from "@/features/ai/utils/model";
 import { requireUser } from "@/features/auth/actions/require-user";
 import { prisma } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 
 
-import { type UIMessage } from "ai"
+import { convertToModelMessages, createIdGenerator, createUIMessageStreamResponse, streamText, toUIMessageStream, type UIMessage } from "ai"
 
 export async function POST(req: Request) {
     await auth.protect();
@@ -37,7 +38,30 @@ export async function POST(req: Request) {
     const messages = alreadySaved ? previousMessages : [...previousMessages, message]
 
     if(!alreadySaved){
-        await saveChatMessage(id, [message]);
+        await saveChatMessages(id, [message]);
     }
+
+    const result = streamText({
+        model: getChatModel(),
+        system: conversation.systemPrompt || "you are a chatgpt, useful assistant",
+        messages: await convertToModelMessages(messages)
+    })
+
+    result.consumeStream();
+
+    return createUIMessageStreamResponse({
+        stream: toUIMessageStream({
+            stream: result.stream,
+            originalMessages: messages,
+            generateMessageId: createIdGenerator({prefix: "msg", size: 16}),
+            onEnd: async ({messages: finalMessages}) => {
+                try {
+                    await saveChatMessages(id, finalMessages, {updateTitle: false})
+                } catch (error) {
+                    console.error("Failed to save chat messages", error)
+                }
+            }
+        })
+    })
 
 }

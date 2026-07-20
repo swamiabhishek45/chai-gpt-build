@@ -1,7 +1,14 @@
+"use server";
+
 import { prisma } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
-import { UIMessage } from "ai";
+import { isTextUIPart, type UIMessage } from "ai";
 
+
+/** Extracts plain text from an AI SDK `UIMessage` by joining all text parts. */
+function getMessageText(message: UIMessage) {
+  return message.parts.filter(isTextUIPart).map((part) => part.text).join("");
+}
 
 
 function toUIMessageParts(parts: Prisma.JsonValue | null, content: string): UIMessage["parts"]{
@@ -11,9 +18,7 @@ function toUIMessageParts(parts: Prisma.JsonValue | null, content: string): UIMe
         return stored;
     }
 
-
     return [{type: "text", text: content}];
-
 }
 
 
@@ -28,4 +33,60 @@ export async function loadChatMessages(conversationId: string): Promise<UIMessag
             role: row.role === "ASSISTANT" ? "assistant" : "user",
                 parts: toUIMessageParts(row.parts, row.content),
     }));
+}
+
+type SaveChatMessagesOptions = {
+  updateTitle?: boolean;
+};
+
+
+export async function saveChatMessages(
+  conversationId: string,
+  messages: UIMessage[],
+  options: SaveChatMessagesOptions = {}
+) {
+  const { updateTitle = true } = options;
+
+  for (const message of messages) {
+    if (message.role === "system") continue;
+
+    const content = getMessageText(message);
+    const role = message.role === "assistant" ? "ASSISTANT" : "USER";
+
+    await prisma.message.upsert({
+      where: { id: message.id },
+      create: {
+        id: message.id,
+        conversationId,
+        role,
+        status: "COMPLETE",
+        content,
+        parts: message.parts as Prisma.InputJsonValue,
+      },
+      update: {
+        content,
+        parts: message.parts as Prisma.InputJsonValue,
+        status: "COMPLETE",
+      },
+    });
+  }
+
+  const conversation = await prisma.conversation.findUniqueOrThrow({
+    where: { id: conversationId },
+    select: { title: true },
+  });
+
+  const firstUser = messages.find((message) => message.role === "user");
+  const firstUserText = firstUser ? getMessageText(firstUser).trim() : "";
+
+  await prisma.conversation.update({
+    where: { id: conversationId },
+    data: {
+      lastMessageAt: new Date(),
+      title:
+        updateTitle && conversation.title === "New Chat" && firstUserText
+          ? firstUserText.slice(0, 48)
+          : conversation.title,
+    },
+  });
 }
