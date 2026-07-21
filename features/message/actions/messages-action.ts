@@ -3,7 +3,7 @@
 import { requireUser } from "@/features/auth/actions/require-user";
 import { prisma } from "@/lib/db";
 import { appCache } from "@/lib/cache";
-import { MessageRole, MessageStatus } from "@/lib/generated/prisma/enums";
+import { MessageRole, MessageStatus } from "@/lib/generated/prisma/enums.ts";
 import { revalidatePath } from "next/cache";
 import { ensureActiveBranch } from "@/features/ai/action/chat-store";
 
