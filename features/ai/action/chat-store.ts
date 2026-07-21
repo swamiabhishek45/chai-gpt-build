@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Prisma } from "@/lib/generated/prisma/client.ts";
+import { Prisma } from "@/lib/generated/prisma/client";
 import { isTextUIPart, type UIMessage } from "ai";
 import { appCache } from "@/lib/cache";
 
