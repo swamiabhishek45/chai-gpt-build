@@ -110,12 +110,12 @@ export function BranchSelector({ conversationId, currentBranchId }: BranchSelect
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-72 bg-popover/95 backdrop-blur-md border border-border rounded-xl shadow-lg p-2.5 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="absolute right-0 mt-2 w-72 bg-popover/95 backdrop-blur-md border border-border rounded-xl shadow-lg p-2.5 z-50 flex flex-col gap-1 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
             Branches
           </div>
 
-          <div className="max-h-56 overflow-y-auto flex flex-col gap-0.5 pr-0.5">
+          <div className="max-h-56 overflow-y-auto no-scrollbar flex flex-col gap-0.5 pr-0.5">
             {branches?.map((branch) => {
               const isActive = branch.id === activeBranch?.id;
               const isEditing = branch.id === editingBranchId;

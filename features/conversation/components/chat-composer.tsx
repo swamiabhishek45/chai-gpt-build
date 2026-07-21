@@ -108,7 +108,7 @@ export function ChatComposer({
               )}
             >
               <Globe size={11.5} className={cn("transition-colors", webSearchActive ? "text-primary animate-pulse" : "text-muted-foreground")} />
-              <span>Web Search</span>
+              <span className="hidden sm:inline">Web Search</span>
             </button>
 
             {/* Reasoning Toggle */}
@@ -123,7 +123,7 @@ export function ChatComposer({
               )}
             >
               <Sparkles size={11.5} className={cn("transition-colors", reasoningActive ? "text-amber-500 animate-pulse" : "text-muted-foreground")} />
-              <span>Reasoning</span>
+              <span className="hidden sm:inline">Reasoning</span>
             </button>
           </div>
 

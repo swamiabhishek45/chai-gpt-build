@@ -3,6 +3,7 @@ import { getChatModel } from "@/features/ai/utils/model";
 import { requireUser } from "@/features/auth/actions/require-user";
 import { prisma } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
+import { appCache } from "@/lib/cache";
 import { Logger } from "@/lib/logger";
 
 import { convertToModelMessages, createIdGenerator, createUIMessageStreamResponse, streamText, toUIMessageStream, tool, isStepCount, zodSchema, type UIMessage } from "ai"
@@ -40,6 +41,31 @@ export async function POST(req: Request) {
     if (!conversation) {
         return new Response("Conversation not found", { status: 404 })
     }
+
+    // Rate Limiting Check & Increment (Backend enforced and atomic/concurrency-safe)
+    const updatedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: { apiCallsCount: { increment: 1 } }
+    });
+
+    if (updatedUser.apiCallsCount > 10) {
+        // Exceeded limit: revert the increment
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { apiCallsCount: { decrement: 1 } }
+        });
+
+        // Invalidate the cache to ensure requireUser() or other components get the updated count
+        appCache.delete(`user:${user.clerkId}`);
+
+        return new Response("API call limit reached. You have used all 10 allowed requests.", {
+            status: 429,
+            statusText: "Too Many Requests"
+        });
+    }
+
+    // Invalidate the cache for user's updated calls count
+    appCache.delete(`user:${user.clerkId}`);
 
     // 6. Load previous messages (instrumented)
     const previousMessages = await Logger.measure(

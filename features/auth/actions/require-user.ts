@@ -33,3 +33,11 @@ export async function requireUser() {
     appCache.set(cacheKey, user, CACHE_TTL.USER);
     return user;
 }
+
+export async function getUserUsage() {
+    const user = await requireUser();
+    return {
+        apiCallsCount: user.apiCallsCount ?? 0,
+        maxCalls: 10
+    };
+}

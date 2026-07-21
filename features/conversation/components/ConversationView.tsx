@@ -50,9 +50,15 @@ const ConversationView = ({
       void queryClient.invalidateQueries({
         queryKey: queryKeys.conversation.all,
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["user", "usage"],
+      });
     },
     onError: (error) => {
       toast.error(error.message);
+      void queryClient.invalidateQueries({
+        queryKey: ["user", "usage"],
+      });
     },
   });
   const conversation = conversations?.find((item) => item.id === conversationId);
@@ -65,7 +71,7 @@ const ConversationView = ({
         <div className="flex items-center gap-2 min-w-0">
           <SidebarTrigger />
           <Separator orientation="vertical" className="mx-1 h-4" />
-          <h1 className="truncate text-sm font-medium max-w-[200px] sm:max-w-[400px]">{title}</h1>
+          <h1 className="truncate text-sm font-medium max-w-[120px] min-[400px]:max-w-[200px] sm:max-w-[400px]">{title}</h1>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <BranchSelector conversationId={conversationId} currentBranchId={currentBranchId} />

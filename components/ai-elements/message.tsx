@@ -33,7 +33,7 @@ export const Message = ({ className, from, ...props }: MessageProps) => (
   <div
     className={cn(
       "group flex w-full flex-col gap-3 transition-all duration-300",
-      from === "user" ? "is-user ml-auto justify-end max-w-[75%]" : "is-assistant max-w-[95%] py-4",
+      from === "user" ? "is-user ml-auto justify-end max-w-[90%] sm:max-w-[75%]" : "is-assistant max-w-[98%] py-4",
       className
     )}
     {...props}

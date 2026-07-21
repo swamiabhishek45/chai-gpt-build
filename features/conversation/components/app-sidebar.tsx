@@ -12,8 +12,14 @@ import {
   Trash2Icon,
   Search,
   MessageSquarePlus,
+  MessageSquare,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
+import { useQuery } from "@tanstack/react-query";
+import { getUserUsage } from "@/features/auth/actions/require-user";
+import { Logo } from "@/components/Logo";
 import { useTheme } from "next-themes";
 import { isToday, isYesterday, subDays, isAfter } from "date-fns";
 
@@ -101,10 +107,8 @@ export function AppSidebar() {
               className="font-semibold tracking-tight hover:bg-transparent"
               render={<Link href="/" />}
             >
-              <span className="flex size-8 items-center justify-center rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-sm shadow-primary/20">
-                C
-              </span>
-              <span className="font-semibold text-foreground text-sm tracking-tight">ChaiGPT</span>
+              <Logo className="size-7 shrink-0" />
+              <span className="font-semibold text-foreground text-sm tracking-tight group-data-[collapsible=icon]:hidden">ChaiGPT</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem className="mt-2">
@@ -113,8 +117,8 @@ export function AppSidebar() {
               render={<Link href="/" />}
               className="bg-primary/5 hover:bg-primary/10 border border-primary/10 rounded-xl px-3.5 py-2.5 text-xs text-primary transition-all duration-200 flex items-center justify-center gap-1.5 font-medium shadow-sm hover:shadow"
             >
-              <MessageSquarePlus size={14} />
-              <span>New chat</span>
+              <MessageSquarePlus size={14} className="shrink-0" />
+              <span className="group-data-[collapsible=icon]:hidden">New chat</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -122,7 +126,7 @@ export function AppSidebar() {
 
       <SidebarContent className="gap-0 mt-2">
         {/* Search Input */}
-        <div className="px-3.5 py-2.5 shrink-0">
+        <div className="px-3.5 py-2.5 shrink-0 group-data-[collapsible=icon]:hidden">
           <div className="relative">
             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground/50" />
             <input
@@ -200,7 +204,7 @@ function ChatList({
 
         return (
           <div key={groupName} className="flex flex-col gap-1">
-            <div className="px-3.5 py-1 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider select-none">
+            <div className="px-3.5 py-1 text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider select-none group-data-[collapsible=icon]:hidden">
               {groupName}
             </div>
             <div className="flex flex-col gap-0.5">
@@ -244,13 +248,14 @@ function ChatItem({
         tooltip={conversation.title}
         render={<Link href={`/c/${conversation.id}`} />}
         className={cn(
-          "relative overflow-hidden px-3.5 py-2.5 rounded-xl transition-all duration-200 flex items-center justify-between w-full text-left select-none border border-transparent",
+          "relative overflow-hidden px-3.5 py-2.5 rounded-xl transition-all duration-200 flex items-center justify-start gap-2.5 w-full text-left select-none border border-transparent",
           isActive
             ? "bg-primary/5 dark:bg-primary/10 text-primary border-primary/10 font-medium"
             : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
         )}
       >
-        <span className="truncate pr-6 text-xs">{conversation.title}</span>
+        <MessageSquare className="size-4 shrink-0" />
+        <span className="truncate pr-6 text-xs group-data-[collapsible=icon]:hidden">{conversation.title}</span>
 
         {/* Discord-style left accent indicator line */}
         <div
@@ -266,7 +271,7 @@ function ChatItem({
           render={
             <SidebarMenuAction
               showOnHover
-              className="data-popup-open:bg-sidebar-accent mr-1 hover:bg-muted text-muted-foreground rounded-lg transition-colors"
+              className="data-popup-open:bg-sidebar-accent mr-1 hover:bg-muted text-muted-foreground rounded-lg transition-colors group-data-[collapsible=icon]:hidden"
             />
           }
         >
@@ -308,21 +313,64 @@ function ChatItem({
 function SidebarFooterMenu() {
   const { resolvedTheme, setTheme } = useTheme();
 
+  const { data: usage } = useQuery({
+    queryKey: ["user", "usage"],
+    queryFn: () => getUserUsage(),
+    refetchOnWindowFocus: false,
+  });
+
+  const apiCallsCount = usage?.apiCallsCount ?? 0;
+  const maxCalls = usage?.maxCalls ?? 10;
+  const percentage = Math.min((apiCallsCount / maxCalls) * 100, 100);
+
+  const barColorClass =
+    apiCallsCount >= maxCalls
+      ? "bg-destructive"
+      : apiCallsCount >= 8
+      ? "bg-amber-500"
+      : "bg-primary";
+
+  const ThemeIcon = resolvedTheme === "dark" ? Sun : Moon;
+
   return (
     <SidebarMenu className="gap-2">
+      {usage && (
+        <SidebarMenuItem className="group-data-[collapsible=icon]:hidden px-2">
+          <div className="flex flex-col gap-1.5 rounded-xl border border-border/40 bg-muted/10 p-2.5">
+            <div className="flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+              <span>Requests Used</span>
+              <span className="font-semibold text-foreground">
+                {apiCallsCount} / {maxCalls}
+              </span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted-foreground/10">
+              <div
+                className={`h-full rounded-full transition-all duration-500 ${barColorClass}`}
+                style={{ width: `${percentage}%` }}
+              />
+            </div>
+            {apiCallsCount >= maxCalls && (
+              <span className="text-[10px] text-destructive font-medium leading-none mt-0.5 animate-pulse">
+                All 10 allowed requests used.
+              </span>
+            )}
+          </div>
+        </SidebarMenuItem>
+      )}
       <SidebarMenuItem>
         <Button
           type="button"
           variant="ghost"
           size="sm"
-          className="w-full justify-start rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 py-1.5"
+          className="w-full justify-start gap-2.5 rounded-xl text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 py-1.5 group-data-[collapsible=icon]:justify-center"
           onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
         >
-          Toggle theme
+          <ThemeIcon size={14} className="shrink-0" />
+          <span className="group-data-[collapsible=icon]:hidden">Toggle theme</span>
         </Button>
       </SidebarMenuItem>
       <SidebarMenuItem>
-        <div className="flex items-center gap-2.5 px-2 py-1 bg-muted/20 dark:bg-muted/5 rounded-xl border border-border/20">
+        <div className="flex items-center gap-2.5 px-2 py-1 bg-muted/20 dark:bg-muted/5 rounded-xl border border-border/20 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:justify-center">
           <UserButton
             appearance={{
               elements: {

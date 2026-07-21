@@ -139,6 +139,7 @@ export function ChatMessages({ messages, status, conversationId }: ChatMessagesP
                       setForkingMessageId(message.id);
                       setForkName(`Branch from ${message.role === "user" ? "User" : "AI"}`);
                     }}
+                    size="xs"
                     tooltip="Fork a new branch from this message"
                     aria-label="Fork Branch"
                     className="h-6 px-2 text-[10px] flex items-center gap-1 hover:bg-muted text-muted-foreground hover:text-foreground border border-border/40 rounded-md bg-background/50 cursor-pointer"

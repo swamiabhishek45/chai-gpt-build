@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { MessageSquare, Sparkles, Code, FileText, ArrowUpRight, Plus, Terminal } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { cn } from "@/lib/utils";
 
 interface ChatEmptyProps {
@@ -67,8 +68,8 @@ export function ChatEmpty({ onSend }: ChatEmptyProps) {
         {/* Glowing Geometric Logo */}
         <motion.div variants={itemVariants} className="relative flex items-center justify-center">
           <div className="absolute inset-0 size-16 bg-primary/25 rounded-2xl blur-xl animate-pulse" />
-          <div className="relative size-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/25">
-            <Sparkles className="size-6 text-primary-foreground" />
+          <div className="relative size-14 rounded-2xl bg-gradient-to-tr from-primary to-primary/80 border border-primary/20 flex items-center justify-center shadow-lg shadow-primary/25 overflow-hidden">
+            <Logo className="size-8 stroke-primary-foreground fill-primary-foreground" />
           </div>
         </motion.div>
 
